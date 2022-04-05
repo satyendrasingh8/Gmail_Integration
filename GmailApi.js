@@ -2,6 +2,11 @@ var axios = require('axios');
 var qs = require('qs');
 
 class GmailApi {
+
+  accessToken="";
+  constructor(){
+    this.accessToken=this.getAccesstoken();
+  }
     getAccesstoken = async()=>{
         var data = qs.stringify({
             'client_id': '995058308001-utcq87eos3jabbvpadhk4pfg8hkk8gd3.apps.googleusercontent.com',
@@ -36,7 +41,7 @@ class GmailApi {
         method: 'get',
         url: 'https://gmail.googleapis.com/gmail/v1/users/me/messages?q='+searchItem,
         headers: { 
-            Authorization:`Bearer ${await this.getAccesstoken()}`
+            Authorization:`Bearer ${await this.accessToken}`
         }
       };
       
@@ -56,12 +61,12 @@ class GmailApi {
 
 
 
-    readGmailContent = async ()=>{
+    readGmailContent = async (messageId)=>{
 var axios = require('axios');
 
 var config = {
   method: 'get',
-  url: 'https://gmail.googleapis.com/gmail/v1/users/me/messages/17ff8341b66bac5f',
+  url: `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}`,
   headers: {
     Authorization:`Bearer ${await this.accessToken}`
    }
@@ -69,13 +74,26 @@ var config = {
 var data = {};
 
 await axios(config)
-.then(function (response) {
-  console.log(JSON.stringify(response.data));
+.then(async function (response) {
+  
+  data = await response.data;
+  console.log(JSON.stringify(data));
 })
 .catch(function (error) {
   console.log(error);
 });
 
+return data;
+    }
+
+
+    readInboxContent = async (searchText)=>{
+ const threadId = await this.searchGmail(searchText);
+ const message = await this.readGmailContent(threadId);
+  const encodedMessage = await  message.payload["parts"][0].body.data;
+  const decodedStr = Buffer.from(encodedMessage,"base64").toString("ascii");
+  console.log("decoded str --->",decodedStr)
+  return decodedStr; 
     }
 }
 
